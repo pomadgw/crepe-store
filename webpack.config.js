@@ -2,9 +2,11 @@ var path = require('path');
 
 module.exports = {
   context: path.resolve(__dirname, './src'),
-  entry: './crepestore.js',
+  entry: {
+    crepestore: './main.js'
+  },
   output: {
-    filename: 'crepestore-compiled.js',
+    filename: '[name]-compiled.js',
     path: path.resolve(__dirname, 'dist')
   },
   module: {
