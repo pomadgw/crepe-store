@@ -18,8 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-
-var Store__Publish = Symbol();
+function publish() {
+  this.listeners.forEach( (e) => e(this) );
+}
 
 export default class {
   constructor({ state = {}, mutations, actions, getters, debug = false } = {}) {
@@ -57,11 +58,6 @@ export default class {
     onExistsObjVariable(getters, (key) => {
       this.addGetter({ name: key, fn: getters[key] });
     });
-
-    // I want a faux-private function
-    this[Store__Publish] = function publish() {
-      this.listeners.forEach( (e) => e(this) );
-    }
   }
 
   // This method add mutation function,
@@ -92,7 +88,7 @@ export default class {
     // `function({ commit })` works (blatantly inspired by Vuex)
     let fn = (function commit(type, ...args) {
       this.mutations[type](...args);
-      this[Store__Publish]();
+      publish.bind(this)();
     }).bind(this);
 
     return fn;
