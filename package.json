@@ -1,0 +1,27 @@
+{
+  "name": "crepe-store",
+  "version": "0.0.1",
+  "description": "Yet another state management library",
+  "main": "src/crepestore.js",
+  "scripts": {
+    "build": "webpack",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pomadgw/crepe-store.git"
+  },
+  "author": "Rahadian Yusuf <rahadian.y@gmail.com> (https://pomadgw.xyz)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pomadgw/crepe-store/issues"
+  },
+  "homepage": "https://github.com/pomadgw/crepe-store#readme",
+  "devDependencies": {
+    "babel-cli": "^6.24.0",
+    "babel-core": "^6.24.0",
+    "babel-loader": "^6.4.1",
+    "babel-preset-env": "^1.3.2",
+    "webpack": "^2.3.3"
+  }
+}

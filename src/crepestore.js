@@ -48,10 +48,10 @@
       this.state = state;
       this.debug = debug;
 
-      function onExistsObjVariable(var, action) {
-        if (var !== undefined) {
-          for (let key in var) {
-            if(var.hasOwnProperty(key)) {
+      function onExistsObjVariable(obj, action) {
+        if (obj !== undefined) {
+          for (let key in obj) {
+            if(obj.hasOwnProperty(key)) {
               action(key);
             }
           }
