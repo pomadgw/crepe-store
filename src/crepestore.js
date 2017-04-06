@@ -1,3 +1,5 @@
+
+
 (function (factory) {
     // The below code are based from https://github.com/melanke/Watch.JS
 
@@ -7,7 +9,7 @@
         // like Node.
         module.exports = factory();
     } else if (typeof define === 'function' && define.amd) {
-        // AMD. Register as an anonymous module.
+        // AMD.
         define('CrepeStore', [], factory);
     } else {
         // Browser globals
@@ -18,12 +20,13 @@
 
   return class Store {
     constructor({ state = {}, mutations, actions, getters, debug = false } = {}) {
+      // Initialize everything we needed here
       this.mutations = {};
       this.actions = {};
       this.listeners = [];
       this.getters = {};
 
-      // initialize state and debug mode
+      // initialize inital state (if any) and debug mode
       this.state = state;
       this.debug = debug;
 
@@ -60,34 +63,49 @@
       }
     }
 
+    // This method add mutation function,
+    // which is intended to mutate state
     addMutation({ type, fn }) {
       this.mutations[type] = (function(...args) {
         fn(this.state, ...args)
       }).bind(this);
     }
 
+    // This method add action, which
+    // do something to state (including mutating it)
     addAction({ type, fn }) {
       this.actions[type] = (function(...args) {
         fn(this, ...args);
       }).bind(this);
     }
 
+    // This function add a getter function to getter object
     addGetter({ name, fn }) {
       Object.defineProperty(this.getters, name, { get: () => fn(this.state) });
     }
 
+    // Here is what you should call to mutate the state.
     get commit() {
+      // I make it a getter so that
+      // adding action with function signature
+      // `function({ commit })` works (blatantly inspired by Vuex)
       let fn = (function commit(type, ...args) {
         this.mutations[type](...args);
         this[Store__Publish]();
       }).bind(this);
+
       return fn;
     }
 
+    // Here is what you should call to do actions on state
     dispatch(type, ...args) {
       this.actions[type](...args);
     }
 
+    // Register a function that watch changes on
+    // state. This method will return a function
+    // to remove the added listener from store.
+    // Blatantly inspired by Redux
     subscribe(fn) {
       this.listeners.push(fn);
 
