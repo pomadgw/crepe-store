@@ -48,32 +48,30 @@
       this.state = state;
       this.debug = debug;
 
-      // what if mutations are already defined in params?
-      if (mutations !== undefined) {
-        for (let key in mutations) {
-          if(mutations.hasOwnProperty(key)) {
-            this.addMutation({ type: key, fn: mutations[key] });
+      function onExistsObjVariable(var, action) {
+        if (var !== undefined) {
+          for (let key in var) {
+            if(var.hasOwnProperty(key)) {
+              action(key);
+            }
           }
         }
       }
+
+      // what if mutations are already defined in params?
+      onExistsObjVariable(mutations, (key) => {
+        this.addMutation({ type: key, fn: mutations[key] });
+      });
 
       // what if actions are also already defined in params?
-      if (actions !== undefined) {
-        for (let key in actions) {
-          if(actions.hasOwnProperty(key)) {
-            this.addAction({ type: key, fn: actions[key] });
-          }
-        }
-      }
+      onExistsObjVariable(actions, (key) => {
+        this.addAction({ type: key, fn: actions[key] });
+      });
 
       // what if getters are also already defined in params?
-      if (getters !== undefined) {
-        for (let key in getters) {
-          if(getters.hasOwnProperty(key)) {
-            this.addGetter({ name: key, fn: getters[key] });
-          }
-        }
-      }
+      onExistsObjVariable(getters, (key) => {
+        this.addGetter({ name: key, fn: getters[key] });
+      });
 
       // I want a faux-private function
       this[Store__Publish] = function publish() {
