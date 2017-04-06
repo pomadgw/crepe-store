@@ -126,4 +126,4 @@ export default class {
 
     return unsub;
   }
-};
+}
