@@ -18,21 +18,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+var _ = require('private-parts').createKey();
+
 function publish() {
-  this.listeners.forEach( (e) => e(this) );
+  _(this).listeners.forEach( (e) => e(this) );
 }
 
 export default class {
   constructor({ state = {}, mutations, actions, getters, debug = false } = {}) {
     // Initialize everything we needed here
-    this.mutations = {};
-    this.actions = {};
-    this.listeners = [];
-    this.getters = {};
+    _(this).mutations = {};
+    _(this).actions = {};
+    _(this).listeners = [];
+    _(this).getters = {};
 
     // initialize inital state (if any) and debug mode
-    this.state = state;
-    this.debug = debug;
+    _(this).state = state;
+    _(this).debug = debug;
 
     function onExistsObjVariable(obj, action) {
       if (obj !== undefined) {
@@ -63,22 +65,22 @@ export default class {
   // This method add mutation function,
   // which is intended to mutate state
   addMutation({ type, fn }) {
-    this.mutations[type] = (function(...args) {
-      fn(this.state, ...args)
+    _(this).mutations[type] = (function(...args) {
+      fn(_(this).state, ...args)
     }).bind(this);
   }
 
   // This method add action, which
   // do something to state (including mutating it)
   addAction({ type, fn }) {
-    this.actions[type] = (function(...args) {
+    _(this).actions[type] = (function(...args) {
       fn(this, ...args);
     }).bind(this);
   }
 
   // This function add a getter function to getter object
   addGetter({ name, fn }) {
-    Object.defineProperty(this.getters, name, { get: () => fn(this.state) });
+    Object.defineProperty(_(this).getters, name, { get: () => fn(_(this).state) });
   }
 
   // Here is what you should call to mutate the state.
@@ -87,16 +89,20 @@ export default class {
     // adding action with function signature
     // `function({ commit })` works (blatantly inspired by Vuex)
     let fn = (function commit(type, ...args) {
-      this.mutations[type](...args);
+      _(this).mutations[type](...args);
       publish.bind(this)();
     }).bind(this);
 
     return fn;
   }
 
+  get getters() {
+    return _(this).getters;
+  }
+
   // Here is what you should call to do actions on state
   dispatch(type, ...args) {
-    this.actions[type](...args);
+    _(this).actions[type](...args);
   }
 
   // Register a function that watch changes on
@@ -104,17 +110,17 @@ export default class {
   // to remove the added listener from store.
   // Blatantly inspired by Redux
   subscribe(fn) {
-    this.listeners.push(fn);
+    _(this).listeners.push(fn);
 
     var unsub = () => {
-      const len = this.listeners.length;
+      const len = _(this).listeners.length;
       for(var i = 0; i < len; i++) {
-        listener = this.listeners[i];
+        listener = _(this).listeners[i];
 
         if (fn == listener) {
-          let left = this.listeners.slice(0, i);
-          let right = this.listeners.slice(i + 1, len);
-          this.listener = [...left, ...right];
+          let left = _(this).listeners.slice(0, i);
+          let right = _(this).listeners.slice(i + 1, len);
+          _(this).listener = [...left, ...right];
           break;
         }
       }
