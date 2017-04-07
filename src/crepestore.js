@@ -120,6 +120,9 @@ export default class {
       }
     }
 
+    // Initialize publish to new subscriber
+    fn(this);
+
     return unsub;
   }
 }
