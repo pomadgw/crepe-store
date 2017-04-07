@@ -6,7 +6,7 @@
   "scripts": {
     "build:dev": "webpack --env=dev --progress --profile --colors",
     "build:dist": "webpack --env=prod --progress --profile --colors",
-    "test": "mocha"
+    "test": "mocha --compilers js:babel-core/register"
   },
   "repository": {
     "type": "git",

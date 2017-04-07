@@ -1,9 +1,13 @@
+
 var assert = require('assert');
 
-describe('Array', function() {
-  describe('#indexOf()', function() {
-    it('should return -1 when the value is not present', function() {
-      assert.equal(-1, [1,2,3].indexOf(4));
-    });
+import CrepeStore from '../src/crepestore';
+
+describe('CrepeStore', function() {
+  describe('#constructor', function() {
+    it('has an empty state on default', function() {
+      let store = new CrepeStore();
+      assert.deepEqual(store.state, {});
+    })
   });
 });

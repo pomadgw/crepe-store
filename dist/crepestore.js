@@ -333,7 +333,21 @@ var CrepeStore = function () {
   }, {
     key: 'state',
     get: function get() {
-      return _(this).state;
+      var $state = {};
+      var obj = _(this).state;
+
+      var _loop = function _loop(key) {
+        if (obj.hasOwnProperty(key)) {
+          Object.defineProperty($state, key, { get: function get() {
+              return obj[key];
+            } });
+        }
+      };
+
+      for (var key in obj) {
+        _loop(key);
+      }
+      return $state;
     }
   }]);
 

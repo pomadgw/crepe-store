@@ -139,7 +139,14 @@ export default class CrepeStore {
   }
 
   get state() {
-    return _(this).state;
+    let $state = {};
+    let obj = _(this).state;
+    for (let key in obj) {
+      if(obj.hasOwnProperty(key)) {
+        Object.defineProperty($state, key, { get: () => obj[key] });
+      }
+    }
+    return $state;
   }
 
   // Here is what you should call to do actions on state
