@@ -1,2 +1,3 @@
-dist/
+dist/example.min.js
+dist/example.js.map
 node_modules/

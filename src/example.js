@@ -1,52 +1,39 @@
 import CrepeStore from './crepestore';
 
-// From https://davidwalsh.name/javascript-debounce-function :
-// Returns a function, that, as long as it continues to be invoked, will not
-// be triggered. The function will be called after it stops being called for
-// N milliseconds. If `immediate` is passed, trigger the function on the
-// leading edge, instead of the trailing.
-function debounce(func, wait, immediate) {
-  var timeout;
-  return function(...args) {
-    var later = () => {
-      timeout = null;
-      if (!immediate) func.apply(this, args);
-    };
+/*
+ * Example using Crêpe Store
+ *
+ * Also using virtual-dom and t7 here
+ *
+ */
 
-    var callNow = immediate && !timeout;
+function isDefined(variable) {
+  return variable != null;
+}
 
-    clearTimeout(timeout);
+function isObject(variable) {
+  return typeof variable === 'object';
+}
 
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(this, args);
-  };
-};
-
-function throttle(fn, threshhold = 250, scope = this) {
-  var last,
-      deferTimer;
-  return function (...args) {
-    var context = scope;
-
-    var now = +new Date;
-    if (last && now < last + threshhold) {
-      // hold on to it
-      clearTimeout(deferTimer);
-      deferTimer = setTimeout(function () {
-        last = now;
-        fn.apply(context, args);
-      }, threshhold);
+function compileToH({ tag, attrs = {}, children = [] }) {
+  if (isDefined(children)) {
+    if (isObject(children)) {
+      children = children.map( (e) => {
+        if (typeof e === 'object') {
+          let res = compileToH(e);
+          return res;
+        }
+        else
+          return e;
+      });
     } else {
-      last = now;
-      fn.apply(context, args);
+      children = [String(children)];
     }
-  };
+  }
+  return virtualDom.h(tag, attrs, children);
 }
 
 $(() => {
-  var $input = $('#input');
-  var $output = $('#output');
-
   var store = new CrepeStore({
     state: {
       text: 'Type something'
@@ -68,11 +55,34 @@ $(() => {
     }
   });
 
-  store.subscribe(() => {
-    $output.text(store.getters.value);
+  t7.setOutput(t7.Outputs.Universal);
+
+  function render() {
+    var result = t7`
+    <div>
+      <input type="text" id="input" value="${ store.getters.value }"/>
+      <div id="output">
+        ${ store.getters.value }
+      </div>
+    </div>
+    `;
+    return compileToH(result);
+  }
+
+  var tree = render();
+  var rootNode = virtualDom.create(tree);
+
+  $('body')[0].appendChild(rootNode);
+
+  $('#input').keyup(function(){
+    store.dispatch('changeInput', $(this).val());
   });
 
-  $input.keyup(throttle(function(event) {
-    store.dispatch('changeInput', $input.val());
-  }, 250));
+  // 3: Wire up the update logic
+  store.subscribe(function () {
+    var newTree = render();
+    var patches = virtualDom.diff(tree, newTree);
+    rootNode = virtualDom.patch(rootNode, patches);
+    tree = newTree;
+  });
 });
