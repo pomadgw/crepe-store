@@ -1,6 +1,6 @@
 {
   "name": "crepe-store",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Yet another state management library",
   "main": "src/crepestore.js",
   "scripts": {
