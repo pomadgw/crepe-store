@@ -103,19 +103,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// I want private methods and instances
 var _ = __webpack_require__(1).createKey();
 
-function publish() {
-  var _this = this;
-
-  _(this).listeners.forEach(function (e) {
-    return e(_this);
-  });
+function isDefined(variable) {
+  return variable != null;
 }
 
-var _class = function () {
-  function _class() {
-    var _this2 = this;
+var CrepeStore = function () {
+  function CrepeStore() {
+    var _this = this;
 
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
         _ref$state = _ref.state,
@@ -123,10 +120,14 @@ var _class = function () {
         mutations = _ref.mutations,
         actions = _ref.actions,
         getters = _ref.getters,
+        _ref$modules = _ref.modules,
+        modules = _ref$modules === undefined ? {} : _ref$modules,
         _ref$debug = _ref.debug,
         debug = _ref$debug === undefined ? false : _ref$debug;
 
-    _classCallCheck(this, _class);
+    var parent = arguments[1];
+
+    _classCallCheck(this, CrepeStore);
 
     // Initialize everything we needed here
     _(this).mutations = {};
@@ -137,6 +138,31 @@ var _class = function () {
     // initialize inital state (if any) and debug mode
     _(this).state = state;
     _(this).debug = debug;
+    _(this).parent = parent;
+
+    // This function is to publish changes to
+    // all listeners. If the store has parent
+    // (i.e. it is a module), propagate it to
+    // its parent.
+    _(this).publish = function publish() {
+      var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this;
+
+      _(obj).listeners.forEach(function (e) {
+        e(obj);
+      });
+      if (isDefined(_(obj).parent)) {
+        _(this).publish(obj.parent);
+      }
+    };
+
+    _(this).executeOnAllModules = function (fn) {
+      var obj = _(_this).state;
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key) && obj[key] instanceof CrepeStore) {
+          fn(obj[key]);
+        }
+      }
+    };
 
     function onExistsObjVariable(obj, action) {
       if (obj !== undefined) {
@@ -150,17 +176,21 @@ var _class = function () {
 
     // what if mutations are already defined in params?
     onExistsObjVariable(mutations, function (key) {
-      _this2.addMutation({ type: key, fn: mutations[key] });
+      _this.addMutation({ type: key, fn: mutations[key] });
     });
 
     // what if actions are also already defined in params?
     onExistsObjVariable(actions, function (key) {
-      _this2.addAction({ type: key, fn: actions[key] });
+      _this.addAction({ type: key, fn: actions[key] });
     });
 
     // what if getters are also already defined in params?
     onExistsObjVariable(getters, function (key) {
-      _this2.addGetter({ name: key, fn: getters[key] });
+      _this.addGetter({ name: key, fn: getters[key] });
+    });
+
+    onExistsObjVariable(modules, function (key) {
+      _(_this).state[key] = new CrepeStore(modules[key], _this);
     });
   }
 
@@ -168,7 +198,7 @@ var _class = function () {
   // which is intended to mutate state
 
 
-  _createClass(_class, [{
+  _createClass(CrepeStore, [{
     key: 'addMutation',
     value: function addMutation(_ref2) {
       var type = _ref2.type,
@@ -193,11 +223,22 @@ var _class = function () {
           fn = _ref3.fn;
 
       _(this).actions[type] = function () {
+        var parent = _(this).parent;
+        var context = {
+          commit: this.commit
+        };
+        if (isDefined(parent)) {
+          Object.assign(context, {
+            state: _(this).state,
+            rootState: _(this).parent.state
+          });
+        }
+
         for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
           args[_key2] = arguments[_key2];
         }
 
-        fn.apply(undefined, [this].concat(args));
+        fn.apply(undefined, [context].concat(args));
       }.bind(this);
     }
 
@@ -206,13 +247,13 @@ var _class = function () {
   }, {
     key: 'addGetter',
     value: function addGetter(_ref4) {
-      var _this3 = this;
+      var _this2 = this;
 
       var name = _ref4.name,
           fn = _ref4.fn;
 
       Object.defineProperty(_(this).getters, name, { get: function get() {
-          return fn(_(_this3).state);
+          return fn(_(_this2).state);
         } });
     }
 
@@ -241,19 +282,19 @@ var _class = function () {
   }, {
     key: 'subscribe',
     value: function subscribe(fn) {
-      var _this4 = this;
+      var _this3 = this;
 
       _(this).listeners.push(fn);
 
       var unsub = function unsub() {
-        var len = _(_this4).listeners.length;
+        var len = _(_this3).listeners.length;
         for (var i = 0; i < len; i++) {
-          listener = _(_this4).listeners[i];
+          listener = _(_this3).listeners[i];
 
           if (fn == listener) {
-            var left = _(_this4).listeners.slice(0, i);
-            var right = _(_this4).listeners.slice(i + 1, len);
-            _(_this4).listener = [].concat(_toConsumableArray(left), _toConsumableArray(right));
+            var left = _(_this3).listeners.slice(0, i);
+            var right = _(_this3).listeners.slice(i + 1, len);
+            _(_this3).listener = [].concat(_toConsumableArray(left), _toConsumableArray(right));
             break;
           }
         }
@@ -261,6 +302,7 @@ var _class = function () {
 
       // Initialize publish to new subscriber
       fn(this);
+      _(this).executeOnAllModules(fn);
 
       return unsub;
     }
@@ -278,7 +320,7 @@ var _class = function () {
         }
 
         (_$mutations = _(this).mutations)[type].apply(_$mutations, args);
-        publish.bind(this)();
+        _(this).publish();
       }.bind(this);
 
       return fn;
@@ -288,12 +330,17 @@ var _class = function () {
     get: function get() {
       return _(this).getters;
     }
+  }, {
+    key: 'state',
+    get: function get() {
+      return _(this).state;
+    }
   }]);
 
-  return _class;
+  return CrepeStore;
 }();
 
-exports.default = _class;
+exports.default = CrepeStore;
 
 /***/ }),
 /* 1 */
@@ -373,7 +420,7 @@ module.exports = {
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var _templateObject = _taggedTemplateLiteral(['\n    <div>\n      <input type="text" id="input" value="', '"/>\n      <div id="output">\n        ', '\n      </div>\n    </div>\n    '], ['\n    <div>\n      <input type="text" id="input" value="', '"/>\n      <div id="output">\n        ', '\n      </div>\n    </div>\n    ']);
+var _templateObject = _taggedTemplateLiteral(['\n    <div>\n      <input type="text" id="input" value="', '"/>\n      <button id="inc">+</button>\n      <div id="output">\n        ', '\n      </div>\n      <div style="font-family: monospace">\n        ', '\n      </div>\n    </div>\n    '], ['\n    <div>\n      <input type="text" id="input" value="', '"/>\n      <button id="inc">+</button>\n      <div id="output">\n        ', '\n      </div>\n      <div style="font-family: monospace">\n        ', '\n      </div>\n    </div>\n    ']);
 
 var _crepestore = __webpack_require__(0);
 
@@ -421,6 +468,29 @@ function compileToH(_ref) {
 }
 
 $(function () {
+  var moduleCounter = {
+    state: {
+      counter: 0
+    },
+    mutations: {
+      inc: function inc(state) {
+        state.counter += 1;
+      }
+    },
+    actions: {
+      increase: function increase(_ref2) {
+        var commit = _ref2.commit;
+
+        commit('inc');
+      }
+    },
+    getters: {
+      value: function value(state) {
+        return state.counter;
+      }
+    }
+  };
+
   var store = new _crepestore2.default({
     state: {
       text: 'Type something'
@@ -431,8 +501,8 @@ $(function () {
       }
     },
     actions: {
-      changeInput: function changeInput(_ref2, text) {
-        var commit = _ref2.commit;
+      changeInput: function changeInput(_ref3, text) {
+        var commit = _ref3.commit;
 
         commit('change', text);
       }
@@ -441,23 +511,32 @@ $(function () {
       value: function value(state) {
         return state.text;
       }
+    },
+    modules: {
+      counter: moduleCounter
     }
   });
 
   t7.setOutput(t7.Outputs.Universal);
 
   function render() {
-    var result = t7(_templateObject, store.getters.value, store.getters.value);
+    var result = t7(_templateObject, store.getters.value, store.getters.value, store.state.counter.getters.value);
     return compileToH(result);
   }
 
   var tree = render();
   var rootNode = virtualDom.create(tree);
 
+  console.log(store.state.counter);
+
   $('body')[0].appendChild(rootNode);
 
   $('#input').keyup(function () {
     store.dispatch('changeInput', $(this).val());
+  });
+
+  $('#inc').click(function () {
+    store.state.counter.dispatch('increase');
   });
 
   // 3: Wire up the update logic

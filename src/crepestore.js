@@ -18,14 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// I want private methods and instances
 var _ = require('private-parts').createKey();
 
-function publish() {
-  _(this).listeners.forEach( (e) => e(this) );
+function isDefined(variable) {
+  return variable != null;
 }
 
-export default class {
-  constructor({ state = {}, mutations, actions, getters, debug = false } = {}) {
+export default class CrepeStore {
+  constructor({ state = {}, mutations, actions, getters, modules = {}, debug = false } = {}, parent) {
     // Initialize everything we needed here
     _(this).mutations = {};
     _(this).actions = {};
@@ -35,6 +36,29 @@ export default class {
     // initialize inital state (if any) and debug mode
     _(this).state = state;
     _(this).debug = debug;
+    _(this).parent = parent;
+
+    // This function is to publish changes to
+    // all listeners. If the store has parent
+    // (i.e. it is a module), propagate it to
+    // its parent.
+    _(this).publish = function publish(obj = this) {
+      _(obj).listeners.forEach( (e) => {
+        e(obj);
+      });
+      if (isDefined(_(obj).parent)) {
+        _(this).publish(obj.parent);
+      }
+    }
+
+    _(this).executeOnAllModules = (fn) => {
+      let obj = _(this).state;
+      for (let key in obj) {
+        if(obj.hasOwnProperty(key) && obj[key] instanceof CrepeStore) {
+          fn(obj[key]);
+        }
+      }
+    }
 
     function onExistsObjVariable(obj, action) {
       if (obj !== undefined) {
@@ -60,6 +84,10 @@ export default class {
     onExistsObjVariable(getters, (key) => {
       this.addGetter({ name: key, fn: getters[key] });
     });
+
+    onExistsObjVariable(modules, (key) => {
+      _(this).state[key] = new CrepeStore(modules[key], this);
+    })
   }
 
   // This method add mutation function,
@@ -74,7 +102,17 @@ export default class {
   // do something to state (including mutating it)
   addAction({ type, fn }) {
     _(this).actions[type] = (function(...args) {
-      fn(this, ...args);
+      let parent = _(this).parent;
+      let context = {
+        commit: this.commit
+      }
+      if(isDefined(parent)) {
+        Object.assign(context, {
+          state: _(this).state,
+          rootState: _(this).parent.state
+        });
+      }
+      fn(context, ...args);
     }).bind(this);
   }
 
@@ -90,7 +128,7 @@ export default class {
     // `function({ commit })` works (blatantly inspired by Vuex)
     let fn = (function commit(type, ...args) {
       _(this).mutations[type](...args);
-      publish.bind(this)();
+      _(this).publish();
     }).bind(this);
 
     return fn;
@@ -98,6 +136,10 @@ export default class {
 
   get getters() {
     return _(this).getters;
+  }
+
+  get state() {
+    return _(this).state;
   }
 
   // Here is what you should call to do actions on state
@@ -128,6 +170,7 @@ export default class {
 
     // Initialize publish to new subscriber
     fn(this);
+    _(this).executeOnAllModules(fn);
 
     return unsub;
   }

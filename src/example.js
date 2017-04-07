@@ -34,6 +34,27 @@ function compileToH({ tag, attrs = {}, children = [] }) {
 }
 
 $(() => {
+  const moduleCounter = {
+    state: {
+      counter: 0
+    },
+    mutations: {
+      inc(state) {
+        state.counter += 1;
+      }
+    },
+    actions: {
+      increase({ commit }) {
+        commit('inc');
+      }
+    },
+    getters: {
+      value(state) {
+        return state.counter;
+      }
+    }
+  }
+
   var store = new CrepeStore({
     state: {
       text: 'Type something'
@@ -52,6 +73,9 @@ $(() => {
       value(state) {
         return state.text;
       }
+    },
+    modules: {
+      counter: moduleCounter
     }
   });
 
@@ -61,8 +85,12 @@ $(() => {
     var result = t7`
     <div>
       <input type="text" id="input" value="${ store.getters.value }"/>
+      <button id="inc">+</button>
       <div id="output">
         ${ store.getters.value }
+      </div>
+      <div style="font-family: monospace">
+        ${ store.state.counter.getters.value }
       </div>
     </div>
     `;
@@ -76,6 +104,10 @@ $(() => {
 
   $('#input').keyup(function(){
     store.dispatch('changeInput', $(this).val());
+  });
+
+  $('#inc').click(() =>{
+    store.state.counter.dispatch('increase');
   });
 
   // 3: Wire up the update logic
