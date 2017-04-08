@@ -144,7 +144,7 @@ var CrepeStore = function () {
     // all listeners. If the store has parent
     // (i.e. it is a module), propagate it to
     // its parent.
-    _(this).publish = function publish() {
+    _(this).publish = function () {
       var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this;
 
       _(obj).listeners.forEach(function (e) {
@@ -157,20 +157,22 @@ var CrepeStore = function () {
 
     _(this).executeOnAllModules = function (fn) {
       var obj = _(_this).state;
-      for (var key in obj) {
-        if (obj.hasOwnProperty(key) && obj[key] instanceof CrepeStore) {
+      var keys = Object.keys(obj);
+      keys.forEach(function (key) {
+        if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] instanceof CrepeStore) {
           fn(obj[key]);
         }
-      }
+      });
     };
 
     function onExistsObjVariable(obj, action) {
       if (obj !== undefined) {
-        for (var key in obj) {
-          if (obj.hasOwnProperty(key)) {
+        var keys = Object.keys(obj);
+        keys.forEach(function (key) {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
             action(key);
           }
-        }
+        });
       }
     }
 
@@ -227,6 +229,7 @@ var CrepeStore = function () {
         var context = {
           commit: this.commit
         };
+
         if (isDefined(parent)) {
           Object.assign(context, {
             state: _(this).state,
@@ -288,10 +291,10 @@ var CrepeStore = function () {
 
       var unsub = function unsub() {
         var len = _(_this3).listeners.length;
-        for (var i = 0; i < len; i++) {
-          listener = _(_this3).listeners[i];
+        for (var i = 0; i < len; i += 1) {
+          var listener = _(_this3).listeners[i];
 
-          if (fn == listener) {
+          if (fn === listener) {
             var left = _(_this3).listeners.slice(0, i);
             var right = _(_this3).listeners.slice(i + 1, len);
             _(_this3).listener = [].concat(_toConsumableArray(left), _toConsumableArray(right));
@@ -312,7 +315,7 @@ var CrepeStore = function () {
       // I make it a getter so that
       // adding action with function signature
       // `function({ commit })` works (blatantly inspired by Vuex)
-      var fn = function commit(type) {
+      var fn = function (type) {
         var _$mutations;
 
         for (var _len4 = arguments.length, args = Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
@@ -335,18 +338,14 @@ var CrepeStore = function () {
     get: function get() {
       var $state = {};
       var obj = _(this).state;
-
-      var _loop = function _loop(key) {
-        if (obj.hasOwnProperty(key)) {
+      var keys = Object.keys(obj);
+      keys.forEach(function (key) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
           Object.defineProperty($state, key, { get: function get() {
               return obj[key];
             } });
         }
-      };
-
-      for (var key in obj) {
-        _loop(key);
-      }
+      });
       return $state;
     }
   }]);
@@ -433,7 +432,9 @@ module.exports = {
 "use strict";
 
 
-window.CrepeStore = __webpack_require__(0).default;
+var _crepestore = __webpack_require__(0);
+
+window.CrepeStore = _crepestore.CrepeStore;
 
 /***/ })
 /******/ ]);

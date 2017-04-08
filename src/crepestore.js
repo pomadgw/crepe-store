@@ -19,14 +19,21 @@
 // THE SOFTWARE.
 
 // I want private methods and instances
-var _ = require('private-parts').createKey();
+const _ = require('private-parts').createKey();
 
 function isDefined(variable) {
   return variable != null;
 }
 
 export default class CrepeStore {
-  constructor({ state = {}, mutations, actions, getters, modules = {}, debug = false } = {}, parent) {
+  constructor({
+    state = {},
+    mutations,
+    actions,
+    getters,
+    modules = {},
+    debug = false } = {},
+    parent) {
     // Initialize everything we needed here
     _(this).mutations = {};
     _(this).actions = {};
@@ -42,31 +49,33 @@ export default class CrepeStore {
     // all listeners. If the store has parent
     // (i.e. it is a module), propagate it to
     // its parent.
-    _(this).publish = function publish(obj = this) {
-      _(obj).listeners.forEach( (e) => {
+    _(this).publish = function (obj = this) {
+      _(obj).listeners.forEach((e) => {
         e(obj);
       });
       if (isDefined(_(obj).parent)) {
         _(this).publish(obj.parent);
       }
-    }
+    };
 
     _(this).executeOnAllModules = (fn) => {
-      let obj = _(this).state;
-      for (let key in obj) {
-        if(obj.hasOwnProperty(key) && obj[key] instanceof CrepeStore) {
+      const obj = _(this).state;
+      const keys = Object.keys(obj);
+      keys.forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] instanceof CrepeStore) {
           fn(obj[key]);
         }
-      }
-    }
+      });
+    };
 
     function onExistsObjVariable(obj, action) {
       if (obj !== undefined) {
-        for (let key in obj) {
-          if(obj.hasOwnProperty(key)) {
+        const keys = Object.keys(obj);
+        keys.forEach((key) => {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
             action(key);
           }
-        }
+        });
       }
     }
 
@@ -87,29 +96,30 @@ export default class CrepeStore {
 
     onExistsObjVariable(modules, (key) => {
       _(this).state[key] = new CrepeStore(modules[key], this);
-    })
+    });
   }
 
   // This method add mutation function,
   // which is intended to mutate state
   addMutation({ type, fn }) {
-    _(this).mutations[type] = (function(...args) {
-      fn(_(this).state, ...args)
+    _(this).mutations[type] = (function (...args) {
+      fn(_(this).state, ...args);
     }).bind(this);
   }
 
   // This method add action, which
   // do something to state (including mutating it)
   addAction({ type, fn }) {
-    _(this).actions[type] = (function(...args) {
-      let parent = _(this).parent;
-      let context = {
-        commit: this.commit
-      }
-      if(isDefined(parent)) {
+    _(this).actions[type] = (function (...args) {
+      const parent = _(this).parent;
+      const context = {
+        commit: this.commit,
+      };
+
+      if (isDefined(parent)) {
         Object.assign(context, {
           state: _(this).state,
-          rootState: _(this).parent.state
+          rootState: _(this).parent.state,
         });
       }
       fn(context, ...args);
@@ -126,7 +136,7 @@ export default class CrepeStore {
     // I make it a getter so that
     // adding action with function signature
     // `function({ commit })` works (blatantly inspired by Vuex)
-    let fn = (function commit(type, ...args) {
+    const fn = (function (type, ...args) {
       _(this).mutations[type](...args);
       _(this).publish();
     }).bind(this);
@@ -139,13 +149,14 @@ export default class CrepeStore {
   }
 
   get state() {
-    let $state = {};
-    let obj = _(this).state;
-    for (let key in obj) {
-      if(obj.hasOwnProperty(key)) {
+    const $state = {};
+    const obj = _(this).state;
+    const keys = Object.keys(obj);
+    keys.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         Object.defineProperty($state, key, { get: () => obj[key] });
       }
-    }
+    });
     return $state;
   }
 
@@ -161,19 +172,19 @@ export default class CrepeStore {
   subscribe(fn) {
     _(this).listeners.push(fn);
 
-    var unsub = () => {
+    const unsub = () => {
       const len = _(this).listeners.length;
-      for(var i = 0; i < len; i++) {
-        listener = _(this).listeners[i];
+      for (let i = 0; i < len; i += 1) {
+        const listener = _(this).listeners[i];
 
-        if (fn == listener) {
-          let left = _(this).listeners.slice(0, i);
-          let right = _(this).listeners.slice(i + 1, len);
+        if (fn === listener) {
+          const left = _(this).listeners.slice(0, i);
+          const right = _(this).listeners.slice(i + 1, len);
           _(this).listener = [...left, ...right];
           break;
         }
       }
-    }
+    };
 
     // Initialize publish to new subscriber
     fn(this);

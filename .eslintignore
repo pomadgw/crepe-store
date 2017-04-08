@@ -1,0 +1,6 @@
+src/example.js
+dist/*.js
+config/*.js
+webpack.config.js
+node_modules/
+test/

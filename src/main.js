@@ -1,1 +1,3 @@
-window.CrepeStore = require('./crepestore').default;
+import { CrepeStore } from './crepestore';
+
+window.CrepeStore = CrepeStore;
