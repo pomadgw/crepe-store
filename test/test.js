@@ -1,5 +1,5 @@
 
-var assert = require('assert');
+var expect = require('chai').expect
 
 import CrepeStore from '../src/crepestore';
 
@@ -7,7 +7,7 @@ describe('CrepeStore', function() {
   describe('#constructor', function() {
     it('has an empty state on default', function() {
       let store = new CrepeStore();
-      assert.deepEqual(store.state, {});
+      expect(store.state).to.deep.equal({});
     })
   });
 
@@ -22,7 +22,7 @@ describe('CrepeStore', function() {
     it('contains same state as the one passed in constructor parameters', function() {
       let stateStoreKey = Object.getOwnPropertyNames(store.state);
       let realStateKey = Object.getOwnPropertyNames(state);
-      assert.deepEqual(stateStoreKey, realStateKey);
+      expect(stateStoreKey).to.deep.equal(realStateKey);
     });
 
     it('cannot change value by assignment', function() {
@@ -34,8 +34,8 @@ describe('CrepeStore', function() {
         // ignore error -_-
         // We just care whether the value is changed
       }
-      assert.notEqual(store.state.a, newVal);
-      assert.equal(store.state.a, oldVal);
+      expect(store.state.a).to.equal(oldVal);
+      expect(store.state.a).to.not.equal(newVal);
     });
   });
 
@@ -60,7 +60,7 @@ describe('CrepeStore', function() {
       store.addAction({ type: 'check', fn: ({ commit }) => commit('modifyA') });
       store.dispatch('check');
 
-      assert.equal(store.state.a, newVal);
+      expect(store.state.a).to.equal(newVal);
     });
   });
 });
