@@ -57,6 +57,31 @@ describe('CrepeStore', function() {
       };
 
       store.addMutation(mutateObj);
+
+      // dummy action
+      store.addAction({ type: 'check', fn: ({ commit }) => commit('modifyA') });
+      store.dispatch('check');
+
+      expect(store.state.a).to.equal(newVal);
+    });
+  });
+
+  describe('#addAction', function() {
+    it('can add action', function() {
+      let store = new CrepeStore({
+        state: {
+          a: 10
+        },
+        mutations: {
+          modifyA(state) {
+            state.a = newVal;
+          }
+        }
+      });
+
+      const oldVal = store.state.a;
+      const newVal = 10;
+
       store.addAction({ type: 'check', fn: ({ commit }) => commit('modifyA') });
       store.dispatch('check');
 
