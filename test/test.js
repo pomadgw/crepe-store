@@ -7,7 +7,8 @@ describe('CrepeStore', function() {
   describe('#constructor', function() {
     it('has an empty state on default', function() {
       let store = new CrepeStore();
-      expect(store.state).to.deep.equal({});
+      let stateStoreKey = Object.getOwnPropertyNames(store.state);
+      expect(stateStoreKey).to.deep.equal([]);
     })
   });
 
