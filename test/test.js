@@ -89,4 +89,65 @@ describe('CrepeStore', function() {
       expect(store.state.a).to.equal(newVal);
     });
   });
+
+  describe('#subscribe', function() {
+    it('can subscribe a function', function() {
+      let store = new CrepeStore({
+        state: {
+          a: 10
+        },
+        mutations: {
+          modifyA(state) {
+            state.a = newVal;
+          }
+        }
+      });
+
+      let func = function (store) {
+        console.log(store);
+      }
+      try {
+        const unsub = store.subscribe(func);
+        expect(unsub).not.to.equal(null);
+        expect(typeof unsub).to.equal('function');
+      } catch(e) {
+        throw e;
+      }
+    });
+
+    it('can make subscribed function access store', function() {
+      let store = new CrepeStore({
+        state: {
+          a: 10
+        },
+        mutations: {
+          modifyA(state, val) {
+            state.a = val;
+          }
+        },
+        actions: {
+          modifyA({ commit }, val) {
+            commit('modifyA', val);
+          }
+        }
+      });
+
+      let oldVal = 100;
+      let newVal = 0;
+      let val = oldVal;
+
+      let func = function (store) {
+        val = store.state.a;
+      }
+      try {
+        const unsub = store.subscribe(func);
+        store.dispatch('modifyA', newVal);
+
+        expect(val).not.to.equal(oldVal);
+        expect(val).to.equal(newVal);
+      } catch(e) {
+        throw e;
+      }
+    });
+  });
 });
